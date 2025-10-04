@@ -1,0 +1,21 @@
+{
+  "US": { "openings_rate": 4.8, "swdev_wage": 120500 },
+  "AL": { "openings_rate": 4.6, "swdev_wage": 98000 },
+  "AZ": { "openings_rate": 5.1, "swdev_wage": 112300 },
+  "CA": { "openings_rate": 4.0, "swdev_wage": 142800 },
+  "CO": { "openings_rate": 5.0, "swdev_wage": 128900 },
+  "FL": { "openings_rate": 4.9, "swdev_wage": 107400 },
+  "GA": { "openings_rate": 5.2, "swdev_wage": 111600 },
+  "IL": { "openings_rate": 4.2, "swdev_wage": 116400 },
+  "MA": { "openings_rate": 4.1, "swdev_wage": 136700 },
+  "NC": { "openings_rate": 5.3, "swdev_wage": 114900 },
+  "NY": { "openings_rate": 3.9, "swdev_wage": 132200 },
+  "OH": { "openings_rate": 4.5, "swdev_wage": 103800 },
+  "PA": { "openings_rate": 4.3, "swdev_wage": 108600 },
+  "TN": { "openings_rate": 5.0, "swdev_wage": 102200 },
+  "TX": { "openings_rate": 5.4, "swdev_wage": 115300 },
+  "VA": { "openings_rate": 4.2, "swdev_wage": 124900 },
+  "WA": { "openings_rate": 4.0, "swdev_wage": 139400 },
+  "WI": { "openings_rate": 4.6, "swdev_wage": 101300 },
+  "DC": { "openings_rate": 3.5, "swdev_wage": 134500 }
+}
