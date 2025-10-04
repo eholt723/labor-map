@@ -1,0 +1,13 @@
+{
+  "name": "labor-map",
+  "version": "1.0.0",
+  "description": "Interactive US map with LAUS unemployment rates (and optional OEWS wages)",
+  "type": "module",
+  "scripts": {
+    "fetch-laus": "node scripts/fetch-laus.js",
+    "serve": "npx serve ."
+  },
+  "dependencies": {
+    "axios": "^1.12.2"
+  }
+}

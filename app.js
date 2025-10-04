@@ -1,6 +1,6 @@
 /* ---- METRICS & LABELS ---- */
 const METRIC_LABELS = {
-  openings_rate: "Job Openings Rate (JOLTS, %)",
+  openings_rate: "Unemployment Rate (LAUS, %)",
   swdev_wage: "Software Dev Annual Mean Wage (OEWS)"
 };
 function formatValue(key, v) {
