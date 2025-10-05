@@ -239,4 +239,4 @@ function setupControls(geojson) {
     updateSidebar(geojson, currentMetric);
     drawStates(geojson, currentMetric);
   });
-}
+} 
