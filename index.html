@@ -13,6 +13,12 @@
 </head>
 <body>
 
+  <!-- Mobile-only top toolbar -->
+  <div id="mobileToolbar" class="mobile-toolbar" aria-hidden="true">
+    <select id="metricSelectMobile" aria-label="Choose metric (mobile)"></select>
+    <div id="metricChipMobile" class="metric-chip">—</div>
+  </div>
+
   <!-- Map -->
   <div id="map">
     <!-- Info box replaces the old color legend -->
@@ -37,11 +43,12 @@
   <!-- Right panel -->
   <aside id="panel">
     <div class="panel-header">
+      <!-- Desktop dropdown (hidden on mobile via CSS) -->
       <select id="metricSelect" aria-label="Choose metric">
         <option value="unemployment_rate">Unemployment Rate (LAUS, %)</option>
         <option value="swdev_wage">Software Dev Annual Mean Wage (OEWS)</option>
       </select>
-      <!-- Metric chip (shown on mobile next to dropdown) -->
+      <!-- Desktop metric chip (hidden on desktop by default; we only use mobile chip now) -->
       <div id="metricChip" class="metric-chip" aria-hidden="true">—</div>
     </div>
 

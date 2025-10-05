@@ -47,7 +47,7 @@ const isMobile = window.matchMedia("(max-width: 980px)").matches;
 document.addEventListener("DOMContentLoaded", boot);
 
 async function boot() {
-  // Map options: desktop locked; mobile can pan
+  // Map: desktop locked; mobile can pan
   map = L.map("map", {
     attributionControl: false,
     zoomControl: false,
@@ -60,10 +60,9 @@ async function boot() {
     zoomSnap: isMobile ? 0.5 : 1
   });
 
-  // Load metrics (prefer /data, fallback /docs/data for GH Pages)
+  // Load metrics (prefer /data, fallback /docs/data)
   let metricsByAbbr = {};
   let lastUpdatedText = null;
-
   try {
     const m = await fetch("data/latest.json", { cache: "no-cache" });
     if (m.ok) {
@@ -86,13 +85,13 @@ async function boot() {
     } catch {}
   }
 
-  // Show "Updated:" in the info box
+  // "Updated:" text
   const embedded = metricsByAbbr?.__meta?.as_of || metricsByAbbr?.as_of || null;
   const infoEl = document.getElementById("infoUpdated");
   if (infoEl) infoEl.textContent = embedded ? `Updated: ${formatAsOf(embedded)}`
                                             : (lastUpdatedText ? `Updated: ${formatAsOf(lastUpdatedText)}` : "Updated: —");
 
-  // Load states and attach metrics
+  // States + metrics
   const topoResp = await fetch("https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json", { cache: "no-cache" });
   const topoJson = await topoResp.json();
   const allStates = topojson.feature(topoJson, topoJson.objects.states);
@@ -109,7 +108,7 @@ async function boot() {
     features: allStates.features.filter(f => LOWER48_ABBRS.has(f.properties.abbr))
   };
 
-  // View behavior: desktop locked; mobile fits all states
+  // View: desktop locked; mobile fit bounds
   if (isMobile) {
     const tmp = L.geoJSON(statesGeo);
     const bounds = tmp.getBounds();
@@ -170,9 +169,11 @@ function updateSidebar(geojson, metricKey) {
   const statMin = document.getElementById("statMin");
   statMetric.textContent = METRIC_LABELS[metricKey];
 
-  // Update the mobile metric chip (if present)
-  const chip = document.getElementById("metricChip");
-  if (chip) chip.textContent = METRIC_LABELS[metricKey];
+  // Update chips
+  const chipDesktop = document.getElementById("metricChip");
+  const chipMobile = document.getElementById("metricChipMobile");
+  if (chipDesktop) chipDesktop.textContent = METRIC_LABELS[metricKey];
+  if (chipMobile)  chipMobile.textContent  = METRIC_LABELS[metricKey];
 
   if (allRows.length === 0) {
     statAvg.textContent = statMax.textContent = statMin.textContent = "—";
@@ -235,29 +236,38 @@ function renderChart(rows, avg, metricKey) {
       },
       scales: {
         x: { grid: { display: false }, ticks: { color: "#cdd2ff" } },
-        y: {
-          grid: { color: "rgba(255,255,255,0.08)" },
-          ticks: { color: "#cdd2ff", callback: v => formatValue(metricKey, v) }
-        }
+        y: { grid: { color: "rgba(255,255,255,0.08)" }, ticks: { color: "#cdd2ff",
+             callback: v => formatValue(metricKey, v) } }
       }
     }
   });
 }
 
 function setupControls(geojson) {
-  const select = document.getElementById("metricSelect");
-  // (Index.html now has an empty select; fill its options if needed)
-  if (!select.options.length) {
-    for (const key of Object.keys(METRIC_LABELS)) {
-      const opt = document.createElement("option");
-      opt.value = key; opt.textContent = METRIC_LABELS[key];
-      select.appendChild(opt);
-    }
+  const selectDesktop = document.getElementById("metricSelect");
+  const selectMobile  = document.getElementById("metricSelectMobile");
+
+  // Fill mobile select with the same options as desktop
+  if (selectDesktop && selectMobile && !selectMobile.options.length) {
+    Array.from(selectDesktop.options).forEach(opt => {
+      const m = document.createElement("option");
+      m.value = opt.value; m.textContent = opt.textContent;
+      selectMobile.appendChild(m);
+    });
   }
-  select.value = currentMetric;
-  select.addEventListener("change", () => {
-    currentMetric = select.value;
+
+  // Set initial values
+  if (selectDesktop) selectDesktop.value = currentMetric;
+  if (selectMobile)  selectMobile.value  = currentMetric;
+
+  const setMetric = (val) => {
+    currentMetric = val;
+    if (selectDesktop && selectDesktop.value !== val) selectDesktop.value = val;
+    if (selectMobile  && selectMobile.value  !== val) selectMobile.value  = val;
     drawStates(geojson, currentMetric);
     updateSidebar(geojson, currentMetric);
-  });
+  };
+
+  if (selectDesktop) selectDesktop.addEventListener("change", () => setMetric(selectDesktop.value));
+  if (selectMobile)  selectMobile.addEventListener("change", () => setMetric(selectMobile.value));
 }

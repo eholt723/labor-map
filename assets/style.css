@@ -43,7 +43,7 @@ body {
 .info-box p { margin:6px 0; }
 .info-box__meta { opacity:.9; }
 
-/* Panel header with sticky dropdown */
+/* Panel header with sticky dropdown (desktop) */
 .panel-header {
   position: sticky; top: 0; z-index: 2;
   display: flex; justify-content: flex-end; align-items: center;
@@ -58,7 +58,7 @@ body {
   padding: 10px 12px; min-width: 210px; font-size: 0.95rem;
 }
 
-/* Hidden on desktop; shown on mobile next to the dropdown */
+/* Metric chip */
 .metric-chip {
   display: none;
   background: #0f1530;
@@ -96,6 +96,19 @@ body {
 .leaflet-interactive { transition: all 180ms ease; }
 .leaflet-container { background: transparent !important; }
 
+/* ---------- Mobile toolbar (hidden on desktop) ---------- */
+
+.mobile-toolbar {
+  display: none; /* shown only on mobile */
+  position: sticky; top: 0; z-index: 1000;
+  padding: 8px 10px;
+  background: linear-gradient(180deg, rgba(10,15,32,.97), rgba(10,15,32,.85));
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  border-bottom: 1px solid #20285a;
+}
+.mobile-toolbar .metric-chip { display: block; }
+
 /* ---------- Responsive tweaks (desktop unchanged) ---------- */
 
 /* Tablet & small laptop */
@@ -106,6 +119,20 @@ body {
 
 /* Phone layout */
 @media (max-width: 980px) {
+  /* Show top toolbar and hide the panel header */
+  .mobile-toolbar {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 8px;
+    align-items: center;
+  }
+  #metricSelectMobile {
+    background: #0f1530; color: #e9ecff;
+    border: 1px solid #2b3262; border-radius: 10px;
+    padding: 12px 14px; font-size: 1rem; min-width: 0; width: 100%;
+  }
+  .panel-header { display: none; } /* hide desktop header on phones */
+
   #panel {
     position: static;
     width: auto;
@@ -126,22 +153,11 @@ body {
     max-width: min(92vw, 480px);
   }
 
-  /* Put dropdown and metric chip on one line; hide "Metric:" row in card */
-  .panel-header {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 8px;
-    align-items: center;
-    padding-top: 6px;
-  }
-  #metricSelect { min-width: 0; width: 100%; font-size: 1rem; padding: 12px 14px; }
-  .metric-chip { display: block; }
-
-  /* Remove the bar chart; keep stats readable and spaced */
+  /* Hide bar chart on phones */
   .chart-card { display: none; }
-  .stats-card .stats-row:first-child { display: none; } /* hides "Metric: <label>" duplicate */
-  #panel > .stats-card { margin-top: 14px; }
 
+  /* Spacing */
+  #panel > .stats-card { margin-top: 14px; }
   .stats-card, .chart-card { border-radius: 10px; }
   .credit { position: static; text-align: right; margin-top: 10px; }
 }
