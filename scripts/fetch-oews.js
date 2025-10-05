@@ -1,23 +1,12 @@
 // scripts/fetch-oews.js
-// Get OEWS Annual Mean Wage for Software Developers (SOC 15-1252) by state,
-// without downloading mapping files. We construct series IDs directly and call
-// the BLS Public Data API.
+// OEWS Annual Mean Wage for Software Developers (SOC 15-1252) by state.
+// FIX: Use 7-digit *area_code* (FIPS2 + '00000') in the series ID.
+// Series ID layout (from BLS oe.txt):
+//   OE + seasonal(1) + areatype(1) + area_code(7) + industry(6) + occupation(6) + datatype(2)
+// We want: seasonal=U, areatype=S (state), area_code=SS00000, industry=000000 (cross-industry),
+// occupation=151252 (Software Developers), datatype=04 (Annual mean wage).
 //
-// Series ID structure used here (length 20):
-//   1-2   : "OE"        (OEWS prefix)
-//   3     : seasonal    ("U" - not seasonally adjusted)
-//   4     : areatype    ("S" - state)
-//   5-6   : state_code  (two digits, e.g., "06" for CA)
-//   7-12  : industry    ("000000" cross-industry)
-//   13-18 : occupation  ("151252" Software Developers)
-//   19-20 : datatype    ("04" Annual mean wage)
-//
-// We try datatype "04" first (annual mean wage). If a state returns no data,
-// we optionally fall back to other wage datatypes just in case.
-//
-// References:
-// - BLS Series ID format guide (general): https://www.bls.gov/help/hlpforma.htm
-// - OEWS latest annual release date/context: https://www.bls.gov/oes/tables.htm
+// Ref: BLS OEWS series structure in oe.txt (Section 4/5). 
 
 import fs from "fs";
 import path from "path";
@@ -26,17 +15,15 @@ import axios from "axios";
 const OUT_FILE = path.join("data", "latest.json");
 const DOCS_OUT = path.join("docs", "data", "latest.json");
 
-const SEASONAL = "U";      // OEWS is unadjusted
-const AREATYPE = "S";      // state
-const INDUSTRY = "000000"; // cross-industry
-const SOC = "151252";      // Software Developers
-// We primarily want Annual mean wage:
-const PRIMARY_DATATYPE = "04"; // Annual mean wage (expected)
-// Optional fallbacks (comment out if you want ONLY 04)
-const FALLBACK_DATATYPES = ["03"]; // 03 = Hourly mean wage (used as a last resort)
+const SEASONAL = "U";
+const AREATYPE = "S";
+const INDUSTRY = "000000";
+const SOC = "151252";
+const PRIMARY_DATATYPE = "04";     // Annual mean wage
+const FALLBACK_DATATYPES = ["03"]; // Hourly mean wage -> will convert to annual if used
 
-/** Lower-48 + DC */
-const STATES_48_DC = {
+// Lower-48 + DC FIPS (skip AK=02, HI=15)
+const STATES = {
   AL:"01", AZ:"04", AR:"05", CA:"06", CO:"08", CT:"09", DE:"10", FL:"12",
   GA:"13", ID:"16", IL:"17", IN:"18", IA:"19", KS:"20", KY:"21", LA:"22",
   ME:"23", MD:"24", MA:"25", MI:"26", MN:"27", MS:"28", MO:"29", MT:"30",
@@ -45,8 +32,13 @@ const STATES_48_DC = {
   TX:"48", UT:"49", VT:"50", VA:"51", WA:"53", WV:"54", WI:"55", WY:"56", DC:"11"
 };
 
-function makeSeriesId(stateCode, datatype) {
-  return `OE${SEASONAL}${AREATYPE}${stateCode}${INDUSTRY}${SOC}${datatype}`;
+// Build 7-digit area_code for state: FIPS2 + '00000'
+function areaCodeFromFips(fips2) {
+  return `${fips2}00000`; // e.g., '06' -> '0600000'
+}
+
+function makeSeriesIdFromArea(area_code, datatype) {
+  return `OE${SEASONAL}${AREATYPE}${area_code}${INDUSTRY}${SOC}${datatype}`;
 }
 
 async function fetchLatest(seriesIds, blsKey) {
@@ -72,11 +64,13 @@ async function fetchLatest(seriesIds, blsKey) {
 async function main() {
   const key = process.env.BLS_API_KEY || process.env.bls_api_key;
 
-  // Build all "primary" series IDs (datatype 04) for the states
-  const states = Object.entries(STATES_48_DC); // [ [abbr, code], ... ]
-  const primaryIds = states.map(([_, code]) => makeSeriesId(code, PRIMARY_DATATYPE));
+  // Build series IDs for all states with datatype 04 (annual mean wage)
+  const states = Object.entries(STATES); // [ [abbr, fips2], ... ]
+  const primaryIds = states.map(([_, fips]) =>
+    makeSeriesIdFromArea(areaCodeFromFips(fips), PRIMARY_DATATYPE)
+  );
 
-  // Query in chunks of 25 (BLS API limit per request)
+  // Query in chunks of 25
   const chunks = [];
   for (let i = 0; i < primaryIds.length; i += 25) chunks.push(primaryIds.slice(i, i + 25));
 
@@ -86,43 +80,42 @@ async function main() {
     Object.assign(valuesPrimary, res);
   }
 
-  // Determine which states didn't return a primary value (rare, but handle it)
+  // Any states with no primary value?
   const missing = [];
-  for (const [abbr, code] of states) {
-    const sid = makeSeriesId(code, PRIMARY_DATATYPE);
-    if (!(sid in valuesPrimary)) missing.push([abbr, code]);
+  for (const [abbr, fips] of states) {
+    const sid = makeSeriesIdFromArea(areaCodeFromFips(fips), PRIMARY_DATATYPE);
+    if (!(sid in valuesPrimary)) missing.push([abbr, fips]);
   }
 
-  // Optional: try fallbacks for missing states (e.g., hourly mean wage "03")
+  // Optional fallback: hourly mean wage (03) -> convert to annual (x2080)
   const valuesFallback = {};
   if (missing.length && FALLBACK_DATATYPES.length) {
     for (const dt of FALLBACK_DATATYPES) {
-      const ids = missing.map(([_, code]) => makeSeriesId(code, dt));
+      const ids = missing.map(([_, fips]) => makeSeriesIdFromArea(areaCodeFromFips(fips), dt));
       for (let i = 0; i < ids.length; i += 25) {
         const res = await fetchLatest(ids.slice(i, i + 25), key);
         Object.assign(valuesFallback, res);
       }
-      // Remove states that got filled by this fallback
+      // Remove those we just filled
       for (let i = missing.length - 1; i >= 0; i--) {
-        const [abbr, code] = missing[i];
-        if (valuesFallback[makeSeriesId(code, dt)] != null) missing.splice(i, 1);
+        const [abbr, fips] = missing[i];
+        if (valuesFallback[makeSeriesIdFromArea(areaCodeFromFips(fips), dt)] != null) {
+          missing.splice(i, 1);
+        }
       }
       if (!missing.length) break;
     }
   }
 
-  // Merge into latest.json as swdev_wage (annual mean wage USD).
-  // If we only have hourly mean wage (fallback 03), we multiply by 2080 to estimate annual.
+  // Merge into latest.json
   const out = fs.existsSync(OUT_FILE) ? JSON.parse(fs.readFileSync(OUT_FILE, "utf-8")) : {};
-  const abbrByCode = Object.fromEntries(states.map(([abbr, code]) => [code, abbr]));
-
-  for (const [abbr, code] of states) {
-    const sidAnnual = makeSeriesId(code, PRIMARY_DATATYPE);
+  for (const [abbr, fips] of states) {
+    const sidAnnual = makeSeriesIdFromArea(areaCodeFromFips(fips), PRIMARY_DATATYPE);
     let val = valuesPrimary[sidAnnual];
 
-    // Fallback: hourly mean wage -> convert to annual approx (hourly * 2080)
     if (val == null) {
-      const sidHourly = makeSeriesId(code, "03");
+      // fallback hourly -> annual approx
+      const sidHourly = makeSeriesIdFromArea(areaCodeFromFips(fips), "03");
       const hourly = valuesFallback[sidHourly];
       if (Number.isFinite(hourly)) val = Math.round(hourly * 2080);
     }
