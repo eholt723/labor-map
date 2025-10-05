@@ -1,11 +1,13 @@
 /* ---- METRICS & LABELS ---- */
 const METRIC_LABELS = {
-  openings_rate: "Unemployment Rate (LAUS, %)",
+  unemployment_rate: "Unemployment Rate (LAUS, %)",
   swdev_wage: "Software Dev Annual Mean Wage (OEWS)"
 };
 function formatValue(key, v) {
   if (v == null || Number.isNaN(v)) return "—";
-  return key === "swdev_wage" ? "$" + Math.round(v).toLocaleString() : (+v).toFixed(1) + (key==="openings_rate" ? "%" : "");
+  if (key === "swdev_wage") return "$" + Math.round(v).toLocaleString();
+  if (key === "unemployment_rate") return (+v).toFixed(1) + "%";
+  return String(v);
 }
 
 /* us-atlas state names -> USPS abbr */
@@ -28,8 +30,8 @@ const LOWER48_ABBRS = new Set([
 ]);
 
 /* ---- STATE ---- */
-let map, geoLayer, chart;
-let currentMetric = "openings_rate"; // default dropdown
+let map, geoLayer;
+let currentMetric = "unemployment_rate"; // default dropdown
 document.addEventListener("DOMContentLoaded", boot);
 
 async function boot() {
@@ -53,7 +55,7 @@ async function boot() {
   try {
     const m = await fetch("data/latest.json", { cache: "no-cache" });
     if (m.ok) metricsByAbbr = await m.json();
-  } catch (_) { /* optional */ }
+  } catch (_) {}
 
   // Load states from us-atlas (TopoJSON -> GeoJSON) and filter to contig 48 + DC
   const topoResp = await fetch("https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json", { cache: "no-cache" });

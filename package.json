@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "fetch-laus": "node scripts/fetch-laus.js",
-    "serve": "npx serve ."
+    "fetch-oews": "node scripts/fetch-oews.js",
+    "fetch-bls": "node scripts/fetch-bls.js"
   },
   "dependencies": {
     "axios": "^1.12.2"
