@@ -22,7 +22,7 @@ body {
 #map {
   position: absolute; top: 0; left: 0; bottom: 0; right: 360px;
   min-height: 520px;
-  background: #0b1020; /* clean backdrop (no tiles) */
+  background: #0b1020;
 }
 
 /* On-map info box */
@@ -56,6 +56,19 @@ body {
   background: #0f1530; color: #e9ecff;
   border: 1px solid #2b3262; border-radius: 10px;
   padding: 10px 12px; min-width: 210px; font-size: 0.95rem;
+}
+
+/* Hidden on desktop; shown on mobile next to the dropdown */
+.metric-chip {
+  display: none;
+  background: #0f1530;
+  color: #e9ecff;
+  border: 1px solid #2b3262;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 0.95rem;
+  max-width: 100%;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
 /* Cards */
@@ -100,11 +113,10 @@ body {
     border-top: 1px solid #20285a;
     padding: 14px 14px 90px;
   }
-  /* Map occupies more vertical space and can pan */
   #map {
     position: relative;
     right: 0;
-    height: 70vh;             /* taller so the whole US fits */
+    height: 70vh;
     min-height: 380px;
   }
   .info-box {
@@ -113,21 +125,23 @@ body {
     bottom: 12px;
     max-width: min(92vw, 480px);
   }
-  /* Comfortable tap targets */
-  .panel-header { padding-top: 6px; }
-  #metricSelect {
-    min-width: 100%;
-    font-size: 1rem;
-    padding: 12px 14px;
-  }
-  /* Ensure cards do NOT crowd or overlap */
-  #panel > .stats-card,
-  #panel > .chart-card { margin-top: 14px; }
-  .stats-card, .chart-card { border-radius: 10px; }
-  .chart-card { min-height: 300px; }
-  /* The long tech stack line can be chatty on phones; hide if you want */
-  /* .info-box__meta { display:none; } */
 
-  /* Credit flows below content so it never sits on top of the chart */
+  /* Put dropdown and metric chip on one line; hide "Metric:" row in card */
+  .panel-header {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 8px;
+    align-items: center;
+    padding-top: 6px;
+  }
+  #metricSelect { min-width: 0; width: 100%; font-size: 1rem; padding: 12px 14px; }
+  .metric-chip { display: block; }
+
+  /* Remove the bar chart; keep stats readable and spaced */
+  .chart-card { display: none; }
+  .stats-card .stats-row:first-child { display: none; } /* hides "Metric: <label>" duplicate */
+  #panel > .stats-card { margin-top: 14px; }
+
+  .stats-card, .chart-card { border-radius: 10px; }
   .credit { position: static; text-align: right; margin-top: 10px; }
 }

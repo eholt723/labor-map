@@ -51,13 +51,13 @@ async function boot() {
   map = L.map("map", {
     attributionControl: false,
     zoomControl: false,
-    dragging: isMobile,          // enable pan on phones
+    dragging: isMobile,
     scrollWheelZoom: false,
     doubleClickZoom: false,
     boxZoom: false,
     keyboard: false,
-    tap: isMobile,               // allow touch panning
-    zoomSnap: isMobile ? 0.5 : 1 // smoother zoom if we ever enable it
+    tap: isMobile,
+    zoomSnap: isMobile ? 0.5 : 1
   });
 
   // Load metrics (prefer /data, fallback /docs/data for GH Pages)
@@ -109,7 +109,7 @@ async function boot() {
     features: allStates.features.filter(f => LOWER48_ABBRS.has(f.properties.abbr))
   };
 
-  // View/zoom behavior: desktop locked at z=5; mobile fits all states
+  // View behavior: desktop locked; mobile fits all states
   if (isMobile) {
     const tmp = L.geoJSON(statesGeo);
     const bounds = tmp.getBounds();
@@ -127,7 +127,7 @@ async function boot() {
   updateSidebar(statesGeo, currentMetric);
   setupControls(statesGeo);
 
-  // Recompute size after paint and on rotation/resizes
+  // Recompute size after paint and on resize
   setTimeout(() => map.invalidateSize(), 0);
   window.addEventListener("resize", () => map.invalidateSize());
 }
@@ -170,6 +170,10 @@ function updateSidebar(geojson, metricKey) {
   const statMin = document.getElementById("statMin");
   statMetric.textContent = METRIC_LABELS[metricKey];
 
+  // Update the mobile metric chip (if present)
+  const chip = document.getElementById("metricChip");
+  if (chip) chip.textContent = METRIC_LABELS[metricKey];
+
   if (allRows.length === 0) {
     statAvg.textContent = statMax.textContent = statMin.textContent = "—";
     renderChart([], 0, metricKey);
@@ -199,9 +203,19 @@ function updateSidebar(geojson, metricKey) {
 }
 
 function renderChart(rows, avg, metricKey) {
-  const ctx = document.getElementById("rankChart");
+  // Skip chart work entirely on phones when it's hidden by CSS
+  const chartCard = document.querySelector(".chart-card");
+  const isHiddenOnMobile =
+    isMobile && chartCard && getComputedStyle(chartCard).display === "none";
+  const canvas = document.getElementById("rankChart");
+
+  if (!canvas || isHiddenOnMobile) {
+    if (window.__chart__) { window.__chart__.destroy(); window.__chart__ = null; }
+    return;
+  }
+
   if (window.__chart__) window.__chart__.destroy();
-  window.__chart__ = new Chart(ctx, {
+  window.__chart__ = new Chart(canvas, {
     type: "bar",
     data: {
       labels: rows.map(r => r.abbr),
@@ -232,6 +246,14 @@ function renderChart(rows, avg, metricKey) {
 
 function setupControls(geojson) {
   const select = document.getElementById("metricSelect");
+  // (Index.html now has an empty select; fill its options if needed)
+  if (!select.options.length) {
+    for (const key of Object.keys(METRIC_LABELS)) {
+      const opt = document.createElement("option");
+      opt.value = key; opt.textContent = METRIC_LABELS[key];
+      select.appendChild(opt);
+    }
+  }
   select.value = currentMetric;
   select.addEventListener("change", () => {
     currentMetric = select.value;
