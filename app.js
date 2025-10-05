@@ -33,10 +33,11 @@ const LOWER48_ABBRS = new Set([
 let map, geoLayer;
 let currentMetric = "unemployment_rate"; // default dropdown
 let selectionHistory = [];               // [current, prev1, prev2]
-let colorScale = null;                   // chroma scale shared by map + legend
+let selectedAbbr = null;                 // which state is currently shaded
 
-// Pleasant, perceptually-uniform-ish ramp
+// Color ramp for the selected state's fill (chroma.js is already loaded in index.html)
 const COLOR_RAMP = ["#440154","#3b528b","#21918c","#5ec962","#fde725"];
+let colorScale = null; // computed per-metric from data (min..max)
 
 document.addEventListener("DOMContentLoaded", boot);
 
@@ -56,12 +57,13 @@ async function boot() {
   map.setMinZoom(5);
   map.setMaxZoom(5);
 
-  // Load metrics (fallback to docs/ for GitHub Pages)
+  // Load metrics from your repo (data/latest.json), fallback to docs/ for GH Pages
   let metricsByAbbr = {};
   try {
     const m = await fetch("data/latest.json", { cache: "no-cache" });
-    if (m.ok) metricsByAbbr = await m.json();
-    else {
+    if (m.ok) {
+      metricsByAbbr = await m.json();
+    } else {
       const m2 = await fetch("docs/data/latest.json", { cache: "no-cache" });
       if (m2.ok) metricsByAbbr = await m2.json();
     }
@@ -72,7 +74,7 @@ async function boot() {
     } catch (_) {}
   }
 
-  // TopoJSON -> GeoJSON, then attach metrics to features
+  // Load states from us-atlas (TopoJSON -> GeoJSON) and filter to contig 48 + DC
   const topoResp = await fetch("https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json", { cache: "no-cache" });
   const topoJson = await topoResp.json();
   const allStates = topojson.feature(topoJson, topoJson.objects.states);
@@ -89,22 +91,18 @@ async function boot() {
     features: allStates.features.filter(f => LOWER48_ABBRS.has(f.properties.abbr))
   };
 
-  // First render
-  // (updateSidebar will compute scale + draw legend before map draws)
-  updateSidebar(statesGeo, currentMetric);
+  // Compute initial scale from data, render map + sidebar
+  updateSidebar(statesGeo, currentMetric); // computes colorScale + chart + stats
   drawStates(statesGeo, currentMetric);
   setupControls(statesGeo);
 }
 
 function computeScale(rows) {
-  // rows: [{abbr, value}] after filtering to numbers
   if (!rows.length) return null;
-  const min = rows.reduce((m,r)=>r.value<m?r.value:m, rows[0].value);
-  const max = rows.reduce((m,r)=>r.value>m?r.value:m, rows[0].value);
-  if (min === max) {
-    // Avoid divide-by-zero look; make a tiny domain
-    return chroma.scale(COLOR_RAMP).domain([min - 1e-6, max + 1e-6]);
-  }
+  const values = rows.map(r => r.value);
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  if (min === max) return chroma.scale(COLOR_RAMP).domain([min - 1e-6, max + 1e-6]);
   return chroma.scale(COLOR_RAMP).domain([min, max]);
 }
 
@@ -113,10 +111,16 @@ function drawStates(geojson, metricKey) {
 
   geoLayer = L.geoJSON(geojson, {
     style: (feature) => {
+      const abbr = feature.properties.abbr;
       const v = feature.properties.metrics?.[metricKey];
-      const hasVal = typeof v === "number" && !Number.isNaN(v);
-      const fill = hasVal && colorScale ? colorScale(v).hex() : "#0f1736"; // subtle base
-      return { color: "#ffffff", weight: 1.6, fillColor: fill, fillOpacity: hasVal ? 0.85 : 0.25 };
+      const isSelected = selectedAbbr && abbr === selectedAbbr && typeof v === "number" && !Number.isNaN(v);
+      const fill = isSelected && colorScale ? colorScale(v).hex() : "#000000";
+      return {
+        color: "#ffffff",
+        weight: 1.6,
+        fillColor: fill,
+        fillOpacity: isSelected ? 0.9 : 0 // ONLY selected state gets a fill
+      };
     },
     onEachFeature: (feature, layer) => {
       const p = feature.properties;
@@ -132,34 +136,20 @@ function drawStates(geojson, metricKey) {
       layer.on("mouseout",  () => layer.setStyle({ weight: 1.6, color: "#ffffff" }));
       layer.on("click", () => {
         if (!p.abbr) return;
+        // Update selection history and selected state
         selectionHistory = [p.abbr, ...selectionHistory.filter(a => a !== p.abbr)].slice(0, 3);
+        selectedAbbr = p.abbr;
         layer.openPopup();
-        updateSidebar(geojson, currentMetric); // re-render chart + legend labels
+        // Recompute chart/stats and redraw map so only selected is shaded
+        updateSidebar(geojson, currentMetric);
+        drawStates(geojson, currentMetric);
       });
     }
   }).addTo(map);
 }
 
-function drawLegendCanvas() {
-  const canvas = document.getElementById("legendCanvas");
-  if (!canvas || !colorScale) return;
-  const ctx = canvas.getContext("2d");
-  const w = canvas.width, h = canvas.height;
-
-  // horizontal gradient
-  const grad = ctx.createLinearGradient(0, 0, w, 0);
-  const stops = 10;
-  for (let i = 0; i <= stops; i++) {
-    const t = i / stops;
-    grad.addColorStop(t, colorScale.mode ? colorScale(t).hex() : colorScale(t).hex());
-  }
-  ctx.clearRect(0, 0, w, h);
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, w, h);
-}
-
 function updateSidebar(geojson, metricKey) {
-  // All numeric rows across lower-48 + DC
+  // All rows across lower-48 + DC (used for stats + scale)
   const allRows = geojson.features
     .map(f => ({ abbr: f.properties.abbr, value: f.properties.metrics?.[metricKey] }))
     .filter(r => typeof r.value === "number" && !Number.isNaN(r.value));
@@ -176,23 +166,22 @@ function updateSidebar(geojson, metricKey) {
     document.getElementById("legendMin").textContent = "Low";
     document.getElementById("legendMax").textContent = "High";
     colorScale = null;
-    drawLegendCanvas();
     return;
   }
 
+  // Compute color scale for the selected state's fill
+  colorScale = computeScale(allRows);
+
+  // Stats across all states (U.S. context)
   const avg = allRows.reduce((a,b)=>a+b.value,0)/allRows.length;
   const max = allRows.reduce((m,r)=> r.value>m.value?r:m, allRows[0]);
   const min = allRows.reduce((m,r)=> r.value<m.value?r:m, allRows[0]);
-
-  // Compute color scale for map + legend, then draw legend
-  colorScale = computeScale(allRows);
-  drawLegendCanvas();
 
   statAvg.textContent = formatValue(metricKey, avg);
   statMax.textContent = `${formatValue(metricKey, max.value)} (${max.abbr})`;
   statMin.textContent = `${formatValue(metricKey, min.value)} (${min.abbr})`;
 
-  // Chart rows: selection mode (current + 2 previous) OR fallback top 8
+  // ---- Chart rows: selection mode (current + 2 previous) OR fallback top 8
   let chartRows = [];
   if (selectionHistory.length > 0) {
     const lookup = Object.fromEntries(allRows.map(r => [r.abbr, r.value]));
@@ -206,7 +195,7 @@ function updateSidebar(geojson, metricKey) {
 
   renderChart(chartRows, avg, metricKey);
 
-  // Legend labels reflect actual min/max values
+  // Legend labels still reflect national min/max (good context)
   document.getElementById("legendMin").textContent = formatValue(metricKey, min.value);
   document.getElementById("legendMax").textContent = formatValue(metricKey, max.value);
 }
@@ -229,7 +218,7 @@ function renderChart(rows, avg, metricKey) {
         legend: { display: true, labels: { color: "#e9ecff", boxWidth: 18 } },
         tooltip: {
           backgroundColor: "#0f1530", titleColor: "#e9ecff", bodyColor: "#e9ecff",
-          callbacks: { label: c => `${c.dataset.label}: ${formatValue(metricKey, c.raw)}` }
+          callbacks: { label: ctx => `${ctx.dataset.label}: ${formatValue(metricKey, ctx.raw)}` }
         }
       },
       scales: {
@@ -246,7 +235,7 @@ function setupControls(geojson) {
   select.value = currentMetric;
   select.addEventListener("change", () => {
     currentMetric = select.value;
-    // Recompute scale/legend + redraw map and sidebar
+    // Keep the same selected state, recompute scale, and redraw
     updateSidebar(geojson, currentMetric);
     drawStates(geojson, currentMetric);
   });
