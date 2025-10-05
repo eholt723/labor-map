@@ -41,8 +41,7 @@ const LOWER48_ABBRS = new Set([
 /* ---- STATE ---- */
 let map, geoLayer;
 let currentMetric = "unemployment_rate"; // default dropdown
-// Keep a short history of clicks: [most recent, ...] (cap 3)
-let selectionHistory = [];
+let selectionHistory = []; // [most recent, ...] capped at 3
 
 document.addEventListener("DOMContentLoaded", boot);
 
@@ -62,7 +61,7 @@ async function boot() {
   map.setMinZoom(5);
   map.setMaxZoom(5);
 
-  // Load metrics from your repo (data/latest.json), fallback to docs/ for GH Pages
+  // Load metrics (prefer /data, fallback /docs/data for GH Pages)
   let metricsByAbbr = {};
   let lastUpdatedText = null;
 
@@ -78,23 +77,23 @@ async function boot() {
         lastUpdatedText = m2.headers.get("last-modified");
       }
     }
-  } catch (_) {
+  } catch {
     try {
       const m2 = await fetch("docs/data/latest.json", { cache: "no-cache" });
       if (m2.ok) {
         metricsByAbbr = await m2.json();
         lastUpdatedText = m2.headers.get("last-modified");
       }
-    } catch (_) {}
+    } catch {}
   }
 
-  // Prefer embedded timestamp if present
+  // Show "Updated:" in the info box (prefer embedded timestamp if present)
   const embedded = metricsByAbbr?.__meta?.as_of || metricsByAbbr?.as_of || null;
   const infoEl = document.getElementById("infoUpdated");
   if (infoEl) infoEl.textContent = embedded ? `Updated: ${formatAsOf(embedded)}`
                                             : (lastUpdatedText ? `Updated: ${formatAsOf(lastUpdatedText)}` : "Updated: —");
 
-  // Load states from us-atlas (TopoJSON -> GeoJSON) and filter to contig 48 + DC
+  // Load states and attach metrics
   const topoResp = await fetch("https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json", { cache: "no-cache" });
   const topoJson = await topoResp.json();
   const allStates = topojson.feature(topoJson, topoJson.objects.states);
@@ -114,6 +113,10 @@ async function boot() {
   drawStates(statesGeo, currentMetric);
   updateSidebar(statesGeo, currentMetric);
   setupControls(statesGeo);
+
+  // Ensure Leaflet recalculates size after layout paints and on resize
+  setTimeout(() => map.invalidateSize(), 0);
+  window.addEventListener("resize", () => map.invalidateSize());
 }
 
 function drawStates(geojson, metricKey) {
@@ -135,11 +138,8 @@ function drawStates(geojson, metricKey) {
       layer.on("mouseout",  () => layer.setStyle({ weight: 1.6, color: "#ffffff" }));
       layer.on("click", () => {
         if (!p.abbr) return;
-        // Update selection history: put current first, remove duplicates, cap to 3
         selectionHistory = [p.abbr, ...selectionHistory.filter(a => a !== p.abbr)].slice(0, 3);
-        // Open popup (nice UX)
         layer.openPopup();
-        // Re-render just the sidebar chart/stats (map styling unchanged)
         updateSidebar(geojson, currentMetric);
       });
     }
@@ -147,7 +147,6 @@ function drawStates(geojson, metricKey) {
 }
 
 function updateSidebar(geojson, metricKey) {
-  // All rows across lower-48 + DC (used for stats + chart)
   const allRows = geojson.features
     .map(f => ({ abbr: f.properties.abbr, value: f.properties.metrics?.[metricKey] }))
     .filter(r => typeof r.value === "number" && !Number.isNaN(r.value));
@@ -164,7 +163,6 @@ function updateSidebar(geojson, metricKey) {
     return;
   }
 
-  // Stats across all states (U.S. context)
   const avg = allRows.reduce((a,b)=>a+b.value,0)/allRows.length;
   const max = allRows.reduce((m,r)=> r.value>m.value?r:m, allRows[0]);
   const min = allRows.reduce((m,r)=> r.value<m.value?r:m, allRows[0]);
@@ -173,17 +171,14 @@ function updateSidebar(geojson, metricKey) {
   statMax.textContent = `${formatValue(metricKey, max.value)} (${max.abbr})`;
   statMin.textContent = `${formatValue(metricKey, min.value)} (${min.abbr})`;
 
-  // ---- Chart rows: selection mode (current + 2 previous) OR fallback top 8
   let chartRows = [];
   if (selectionHistory.length > 0) {
-    // Respect the order: [current, prev1, prev2]
     const lookup = Object.fromEntries(allRows.map(r => [r.abbr, r.value]));
     chartRows = selectionHistory
       .map(abbr => ({ abbr, value: lookup[abbr] }))
       .filter(r => typeof r.value === "number" && !Number.isNaN(r.value));
   }
   if (chartRows.length === 0) {
-    // Fallback to Top 8 (ascending visual order)
     chartRows = allRows.slice().sort((a,b)=>b.value-a.value).slice(0,8).reverse();
   }
 
@@ -227,7 +222,6 @@ function setupControls(geojson) {
   select.value = currentMetric;
   select.addEventListener("change", () => {
     currentMetric = select.value;
-    // Re-render both: map popups reflect new metric text, chart uses same selection history
     drawStates(geojson, currentMetric);
     updateSidebar(geojson, currentMetric);
   });

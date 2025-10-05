@@ -29,7 +29,7 @@ body {
   position: absolute; left: 12px; bottom: 12px; z-index: 600;
   border: 1px solid #2b3262; border-radius: 10px;
   box-shadow: 0 6px 18px rgba(0,0,0,.3);
-  background: rgba(15,21,48,0.6); /* fallback for no blur */
+  background: rgba(15,21,48,0.6); /* fallback if blur unsupported */
   -webkit-backdrop-filter: blur(4px); /* Safari/iOS support */
   backdrop-filter: blur(4px);
   color: #e9ecff;
@@ -48,7 +48,7 @@ body {
   display: flex; justify-content: flex-end; align-items: center;
   padding-bottom: 6px; margin-bottom: 6px;
   background: linear-gradient(180deg, rgba(10,15,32,.9), rgba(10,15,32,0));
-  -webkit-backdrop-filter: blur(3px); /* Safari/iOS support */
+  -webkit-backdrop-filter: blur(3px);
   backdrop-filter: blur(3px);
 }
 #metricSelect {
@@ -72,26 +72,52 @@ body {
   padding: 10px 12px; min-height: 260px; display:flex; flex-direction: column;
 }
 
-/* Footer credit (keep as-is per your request) */
+/* Footer credit */
 .credit {
   position: absolute; right: 14px; bottom: 10px;
   opacity: .85; font-size: .9rem;
 }
 
-/* Leaflet hover nicety */
+/* Leaflet niceties */
 .leaflet-interactive { transition: all 180ms ease; }
-
-/* Ensure Leaflet’s base is transparent (avoid any covering layer) */
 .leaflet-container { background: transparent !important; }
 
-/* Mobile */
+/* ---------- Responsive tweaks (desktop unchanged) ---------- */
+
+/* Tablet & small laptop tune-up */
+@media (max-width: 1024px) {
+  #panel { width: 340px; }
+  #map { right: 340px; }
+}
+
+/* Phone layout */
 @media (max-width: 980px) {
   #panel {
-    position: static; width: auto; border-left: none;
-    border-top: 1px solid #20285a; padding-bottom: 90px;
+    position: static;
+    width: auto;
+    border-left: none;
+    border-top: 1px solid #20285a;
+    padding: 14px 14px 90px; /* room for bottom credit */
   }
-  #map { position: relative; right: 0; height: 60vh; min-height: 360px; }
-  .info-box { left: 50%; transform: translateX(-50%); }
-  #metricSelect { min-width: 100%; }
+  #map {
+    position: relative;
+    right: 0;
+    height: 62vh;
+    min-height: 360px;
+  }
+  .info-box {
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: 12px;
+    max-width: min(92vw, 480px);
+  }
+  .panel-header { padding-top: 6px; }
+  #metricSelect {
+    min-width: 100%;
+    font-size: 1rem;
+    padding: 12px 14px;
+  }
+  .stats-card, .chart-card { border-radius: 10px; }
+  .chart-card { min-height: 280px; }
   .credit { position: static; text-align: right; margin-top: 10px; }
 }
