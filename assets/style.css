@@ -15,20 +15,16 @@ body {
   padding: 14px 14px 64px;
   display: flex; flex-direction: column; gap: 12px;
   box-shadow: inset 0 1px 0 rgba(255,255,255,.03);
-  overflow: auto;
-  z-index: 10; /* ensure panel sits above map */
+  overflow: auto; z-index: 500;
 }
 
 /* Map fills space left of the panel */
 #map {
-  position: fixed;
-  top: 0; left: 0; bottom: 0; right: 360px;
-  z-index: 0;
-  min-height: 520px;
-  background: #0b1020; /* clean backdrop (no tiles) */
+  position: absolute; top: 0; left: 0; bottom: 0; right: 360px;
+  min-height: 520px; background: #0b1020; /* clean backdrop (no tiles) */
 }
 
-/* ---- On-map info box (replaces legend) ---- */
+/* On-map info box (replaces legend) */
 .info-box {
   position: absolute; left: 12px; bottom: 12px; z-index: 600;
   border: 1px solid #2b3262; border-radius: 10px;
@@ -37,16 +33,14 @@ body {
   -webkit-backdrop-filter: blur(4px); /* Safari/iOS support */
   backdrop-filter: blur(4px);
   color: #e9ecff;
-  max-width: 280px;
+  max-width: 320px;
 }
-
 .info-box__inner { padding: 10px 12px; font-size: 12.5px; line-height: 1.45; }
 .info-box__header { display:flex; justify-content:space-between; gap:10px; align-items:baseline; }
 .info-box__title { margin:0; font-size:13.5px; color:#e9ecff; }
-.info-box__updated { font-size:11.5px; opacity:.85; }
+.info-box__updated { font-size:11.5px; opacity:.85; white-space: nowrap; }
 .info-box p { margin:6px 0; }
-.info-box__link { color:#a7c4ff; text-decoration:underline; }
-.info-box__link:hover { text-decoration:none; }
+.info-box__meta { opacity:.9; }
 
 /* Panel header with sticky dropdown */
 .panel-header {
@@ -57,8 +51,6 @@ body {
   -webkit-backdrop-filter: blur(3px); /* Safari/iOS support */
   backdrop-filter: blur(3px);
 }
-
-/* Metric selector dropdown */
 #metricSelect {
   background: #0f1530; color: #e9ecff;
   border: 1px solid #2b3262; border-radius: 10px;
@@ -67,15 +59,39 @@ body {
 
 /* Stats + chart cards */
 .stats-card, .chart-card {
-  border: 1px solid #2b3262;
-  border-radius: 12px;
-  background: #0e1330;
+  border: 1px solid #2b3262; border-radius: 12px; background:#0e1330;
   box-shadow: 0 6px 20px rgba(0,0,0,.25);
 }
-
 .stats-card { padding: 10px 12px; }
+.stats-row {
+  display:flex; justify-content: space-between; margin: 6px 0; font-size: .95rem;
+}
+.stats-row span { opacity: .85; }
 
-/* Prevent Leaflet background from hiding map tiles */
-.leaflet-container {
-  background: transparent !important;
+.chart-card {
+  padding: 10px 12px; min-height: 260px; display:flex; flex-direction: column;
+}
+
+/* Footer credit (keep as-is per your request) */
+.credit {
+  position: absolute; right: 14px; bottom: 10px;
+  opacity: .85; font-size: .9rem;
+}
+
+/* Leaflet hover nicety */
+.leaflet-interactive { transition: all 180ms ease; }
+
+/* Ensure Leaflet’s base is transparent (avoid any covering layer) */
+.leaflet-container { background: transparent !important; }
+
+/* Mobile */
+@media (max-width: 980px) {
+  #panel {
+    position: static; width: auto; border-left: none;
+    border-top: 1px solid #20285a; padding-bottom: 90px;
+  }
+  #map { position: relative; right: 0; height: 60vh; min-height: 360px; }
+  .info-box { left: 50%; transform: translateX(-50%); }
+  #metricSelect { min-width: 100%; }
+  .credit { position: static; text-align: right; margin-top: 10px; }
 }

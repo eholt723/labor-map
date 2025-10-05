@@ -9,6 +9,15 @@ function formatValue(key, v) {
   if (key === "unemployment_rate") return (+v).toFixed(1) + "%";
   return String(v);
 }
+function formatAsOf(s) {
+  if (!s) return "—";
+  const d = new Date(s);
+  if (isNaN(d)) return s;
+  return d.toLocaleString(undefined, {
+    year: "numeric", month: "short", day: "2-digit",
+    hour: "2-digit", minute: "2-digit"
+  });
+}
 
 /* us-atlas state names -> USPS abbr */
 const NAME_TO_ABBR = {
@@ -32,8 +41,8 @@ const LOWER48_ABBRS = new Set([
 /* ---- STATE ---- */
 let map, geoLayer;
 let currentMetric = "unemployment_rate"; // default dropdown
-let selectionHistory = []; // most recent first, capped to 3
-let __lastUpdatedText = "—";
+// Keep a short history of clicks: [most recent, ...] (cap 3)
+let selectionHistory = [];
 
 document.addEventListener("DOMContentLoaded", boot);
 
@@ -53,18 +62,20 @@ async function boot() {
   map.setMinZoom(5);
   map.setMaxZoom(5);
 
-  // Load metrics (prefer /data then /docs for GH Pages)
+  // Load metrics from your repo (data/latest.json), fallback to docs/ for GH Pages
   let metricsByAbbr = {};
+  let lastUpdatedText = null;
+
   try {
     const m = await fetch("data/latest.json", { cache: "no-cache" });
     if (m.ok) {
       metricsByAbbr = await m.json();
-      __lastUpdatedText = formatLastModified(m.headers.get("last-modified")) || __lastUpdatedText;
+      lastUpdatedText = m.headers.get("last-modified");
     } else {
       const m2 = await fetch("docs/data/latest.json", { cache: "no-cache" });
       if (m2.ok) {
         metricsByAbbr = await m2.json();
-        __lastUpdatedText = formatLastModified(m2.headers.get("last-modified")) || __lastUpdatedText;
+        lastUpdatedText = m2.headers.get("last-modified");
       }
     }
   } catch (_) {
@@ -72,15 +83,18 @@ async function boot() {
       const m2 = await fetch("docs/data/latest.json", { cache: "no-cache" });
       if (m2.ok) {
         metricsByAbbr = await m2.json();
-        __lastUpdatedText = formatLastModified(m2.headers.get("last-modified")) || __lastUpdatedText;
+        lastUpdatedText = m2.headers.get("last-modified");
       }
     } catch (_) {}
   }
-  if (__lastUpdatedText === "—") {
-    __lastUpdatedText = (new Date()).toLocaleDateString(undefined, { year:"numeric", month:"short", day:"2-digit" });
-  }
 
-  // States GeoJSON (lower 48 + DC)
+  // Prefer embedded timestamp if present
+  const embedded = metricsByAbbr?.__meta?.as_of || metricsByAbbr?.as_of || null;
+  const infoEl = document.getElementById("infoUpdated");
+  if (infoEl) infoEl.textContent = embedded ? `Updated: ${formatAsOf(embedded)}`
+                                            : (lastUpdatedText ? `Updated: ${formatAsOf(lastUpdatedText)}` : "Updated: —");
+
+  // Load states from us-atlas (TopoJSON -> GeoJSON) and filter to contig 48 + DC
   const topoResp = await fetch("https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json", { cache: "no-cache" });
   const topoJson = await topoResp.json();
   const allStates = topojson.feature(topoJson, topoJson.objects.states);
@@ -96,9 +110,6 @@ async function boot() {
     type: "FeatureCollection",
     features: allStates.features.filter(f => LOWER48_ABBRS.has(f.properties.abbr))
   };
-
-  // Add Data & Credits panel (replaces choropleth legend)
-  addInfoBox();
 
   drawStates(statesGeo, currentMetric);
   updateSidebar(statesGeo, currentMetric);
@@ -124,8 +135,11 @@ function drawStates(geojson, metricKey) {
       layer.on("mouseout",  () => layer.setStyle({ weight: 1.6, color: "#ffffff" }));
       layer.on("click", () => {
         if (!p.abbr) return;
+        // Update selection history: put current first, remove duplicates, cap to 3
         selectionHistory = [p.abbr, ...selectionHistory.filter(a => a !== p.abbr)].slice(0, 3);
+        // Open popup (nice UX)
         layer.openPopup();
+        // Re-render just the sidebar chart/stats (map styling unchanged)
         updateSidebar(geojson, currentMetric);
       });
     }
@@ -133,6 +147,7 @@ function drawStates(geojson, metricKey) {
 }
 
 function updateSidebar(geojson, metricKey) {
+  // All rows across lower-48 + DC (used for stats + chart)
   const allRows = geojson.features
     .map(f => ({ abbr: f.properties.abbr, value: f.properties.metrics?.[metricKey] }))
     .filter(r => typeof r.value === "number" && !Number.isNaN(r.value));
@@ -141,32 +156,34 @@ function updateSidebar(geojson, metricKey) {
   const statAvg = document.getElementById("statAvg");
   const statMax = document.getElementById("statMax");
   const statMin = document.getElementById("statMin");
-  if (statMetric) statMetric.textContent = METRIC_LABELS[metricKey];
+  statMetric.textContent = METRIC_LABELS[metricKey];
 
   if (allRows.length === 0) {
-    if (statAvg) statAvg.textContent = "—";
-    if (statMax) statMax.textContent = "—";
-    if (statMin) statMin.textContent = "—";
+    statAvg.textContent = statMax.textContent = statMin.textContent = "—";
     renderChart([], 0, metricKey);
     return;
   }
 
+  // Stats across all states (U.S. context)
   const avg = allRows.reduce((a,b)=>a+b.value,0)/allRows.length;
   const max = allRows.reduce((m,r)=> r.value>m.value?r:m, allRows[0]);
   const min = allRows.reduce((m,r)=> r.value<m.value?r:m, allRows[0]);
 
-  if (statAvg) statAvg.textContent = formatValue(metricKey, avg);
-  if (statMax) statMax.textContent = `${formatValue(metricKey, max.value)} (${max.abbr})`;
-  if (statMin) statMin.textContent = `${formatValue(metricKey, min.value)} (${min.abbr})`;
+  statAvg.textContent = formatValue(metricKey, avg);
+  statMax.textContent = `${formatValue(metricKey, max.value)} (${max.abbr})`;
+  statMin.textContent = `${formatValue(metricKey, min.value)} (${min.abbr})`;
 
+  // ---- Chart rows: selection mode (current + 2 previous) OR fallback top 8
   let chartRows = [];
   if (selectionHistory.length > 0) {
+    // Respect the order: [current, prev1, prev2]
     const lookup = Object.fromEntries(allRows.map(r => [r.abbr, r.value]));
     chartRows = selectionHistory
       .map(abbr => ({ abbr, value: lookup[abbr] }))
       .filter(r => typeof r.value === "number" && !Number.isNaN(r.value));
   }
   if (chartRows.length === 0) {
+    // Fallback to Top 8 (ascending visual order)
     chartRows = allRows.slice().sort((a,b)=>b.value-a.value).slice(0,8).reverse();
   }
 
@@ -175,7 +192,6 @@ function updateSidebar(geojson, metricKey) {
 
 function renderChart(rows, avg, metricKey) {
   const ctx = document.getElementById("rankChart");
-  if (!ctx) return;
   if (window.__chart__) window.__chart__.destroy();
   window.__chart__ = new Chart(ctx, {
     type: "bar",
@@ -208,53 +224,11 @@ function renderChart(rows, avg, metricKey) {
 
 function setupControls(geojson) {
   const select = document.getElementById("metricSelect");
-  if (!select) return;
   select.value = currentMetric;
   select.addEventListener("change", () => {
     currentMetric = select.value;
+    // Re-render both: map popups reflect new metric text, chart uses same selection history
     drawStates(geojson, currentMetric);
     updateSidebar(geojson, currentMetric);
   });
-}
-
-/* ---------- Info Box (replaces choropleth legend) ---------- */
-function addInfoBox() {
-  const info = L.control({ position: "bottomleft" });
-  info.onAdd = function () {
-    const div = L.DomUtil.create("div", "info-box");
-    div.innerHTML = `
-      <div class="info-box__inner">
-        <div class="info-box__header">
-          <h4 class="info-box__title">About This Map</h4>
-          <span class="info-box__updated">Updated: ${__lastUpdatedText}</span>
-        </div>
-        <p class="info-box__p">
-          Data: U.S. Bureau of Labor Statistics (BLS) —
-          <strong>Job Openings (JOLTS)</strong> and
-          <strong>Software Dev Wages (OEWS)</strong>.
-        </p>
-        <p class="info-box__p">
-          Pipeline: Node.js script fetches latest BLS data and writes
-          <code>data/latest.json</code>.
-        </p>
-        <p class="info-box__p">
-          Built with <strong>Leaflet</strong> and <strong>Chart.js</strong>.
-          Hosted on <strong>GitHub Pages</strong>.
-          <a class="info-box__link" href="https://github.com/eholt723/labor-map" target="_blank" rel="noopener">Source</a>
-        </p>
-      </div>
-    `;
-    L.DomEvent.disableClickPropagation(div);
-    L.DomEvent.disableScrollPropagation(div);
-    return div;
-  };
-  info.addTo(map);
-}
-
-/* Helper: format Last-Modified header into a short date */
-function formatLastModified(hdr) {
-  if (!hdr) return null;
-  const d = new Date(hdr);
-  if (isNaN(+d)) return null;
-  return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "2-digit" });
 }

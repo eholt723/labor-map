@@ -13,8 +13,24 @@
 </head>
 <body>
 
-  <!-- Map -->
-  <div id="map"></div>
+  <!-- Info Box -->
+  <div class="info-box" id="infoBox">
+    <div class="info-box__inner">
+      <div class="info-box__header">
+        <h4 class="info-box__title">Data & Sources</h4>
+        <div class="info-box__updated" id="infoUpdated">—</div>
+      </div>
+      <p>
+        <strong>Unemployment</strong>: BLS LAUS &nbsp;•&nbsp;
+        <strong>Software dev wages</strong>: BLS OEWS &nbsp;•&nbsp;
+        <strong>Map topology</strong>: us-atlas/topojson
+      </p>
+      <p class="info-box__meta">
+        Rendered with Leaflet + Chart.js. Built in VS Code. Deployed on GitHub Pages.
+      </p>
+    </div>
+  </div>
+
 
   <!-- Right panel -->
   <aside id="panel">
@@ -42,8 +58,10 @@
   <!-- Libraries -->
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chroma-js@2.4.2/dist/chroma.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
-
+  <!-- App -->
+  <script src="app.js?v=bls2"></script>
 </body>
 </html>
