@@ -58,7 +58,7 @@ body {
   padding: 10px 12px; min-width: 210px; font-size: 0.95rem;
 }
 
-/* Metric chip */
+/* Metric chip (used in mobile toolbar) */
 .metric-chip {
   display: none;
   background: #0f1530;
@@ -146,12 +146,21 @@ body {
     height: 70vh;
     min-height: 380px;
   }
+
+  /* Centered, smaller info box WITH smaller text */
   .info-box {
     left: 50%;
     transform: translateX(-50%);
-    bottom: 12px;
-    max-width: min(92vw, 480px);
+    bottom: 8px;
+    max-width: min(88vw, 360px);
+    border-radius: 8px;
+    box-shadow: 0 4px 14px rgba(0,0,0,.28);
   }
+  .info-box__inner { padding: 8px 10px; }
+  .info-box__title { font-size: 12.5px; }
+  .info-box__updated { font-size: 11px; }
+  .info-box p { font-size: 12px; line-height: 1.35; margin: 4px 0; }
+  /* keep .info-box__meta visible (do NOT hide) */
 
   /* Hide bar chart on phones */
   .chart-card { display: none; }
@@ -159,5 +168,12 @@ body {
   /* Spacing */
   #panel > .stats-card { margin-top: 14px; }
   .stats-card, .chart-card { border-radius: 10px; }
+
+  /* Credit flows below content */
   .credit { position: static; text-align: right; margin-top: 10px; }
+}
+
+/* Extra-small phones: slightly tighter info box */
+@media (max-width: 420px) {
+  .info-box { max-width: 90vw; bottom: 6px; }
 }
