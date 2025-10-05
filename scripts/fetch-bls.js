@@ -1,6 +1,5 @@
 // scripts/fetch-bls.js
-// Orchestrator to fetch BLS-derived data for the map.
-// Runs LAUS (unemployment_rate) then OEWS (swdev_wage).
+// Orchestrator: run OEWS first, then LAUS (both quota-friendly).
 
 import { spawnSync } from "child_process";
 
@@ -13,8 +12,8 @@ function run(stepName, file) {
 }
 
 async function main() {
-  run("LAUS (unemployment_rate)", "scripts/fetch-laus.js");
   run("OEWS (swdev_wage)", "scripts/fetch-oews.js");
+  run("LAUS (unemployment_rate)", "scripts/fetch-laus.js");
   console.log("\nAll done ✅  latest.json updated and mirrored to docs/ if present.");
 }
 

@@ -1,247 +1,247 @@
 {
   "AL": {
     "openings_rate": 2.9,
-    "swdev_wage": null,
+    "swdev_wage": 117380,
     "unemployment_rate": 2.9
   },
   "AZ": {
     "openings_rate": 4.1,
-    "swdev_wage": null,
+    "swdev_wage": 133140,
     "unemployment_rate": 4.1
   },
   "AR": {
     "openings_rate": 3.8,
-    "swdev_wage": null,
+    "swdev_wage": 100380,
     "unemployment_rate": 3.8
   },
   "CA": {
     "openings_rate": 5.5,
-    "swdev_wage": null,
+    "swdev_wage": 185750,
     "unemployment_rate": 5.5
   },
   "CO": {
     "openings_rate": 4.2,
-    "swdev_wage": null,
+    "swdev_wage": 147750,
     "unemployment_rate": 4.2
   },
   "CT": {
     "openings_rate": 3.8,
-    "swdev_wage": null,
+    "swdev_wage": 136530,
     "unemployment_rate": 3.8
   },
   "DE": {
     "openings_rate": 4.3,
-    "swdev_wage": null,
+    "swdev_wage": 136170,
     "unemployment_rate": 4.3
   },
   "FL": {
     "openings_rate": 3.8,
-    "swdev_wage": null,
+    "swdev_wage": 128290,
     "unemployment_rate": 3.8
   },
   "GA": {
     "openings_rate": 3.4,
-    "swdev_wage": null,
+    "swdev_wage": 128310,
     "unemployment_rate": 3.4
   },
   "ID": {
     "openings_rate": 3.7,
-    "swdev_wage": null,
+    "swdev_wage": 125460,
     "unemployment_rate": 3.7
   },
   "IL": {
     "openings_rate": 4.4,
-    "swdev_wage": null,
+    "swdev_wage": 127030,
     "unemployment_rate": 4.4
   },
   "IN": {
     "openings_rate": 3.6,
-    "swdev_wage": null,
+    "swdev_wage": 107610,
     "unemployment_rate": 3.6
   },
   "IA": {
     "openings_rate": 3.8,
-    "swdev_wage": null,
+    "swdev_wage": 116000,
     "unemployment_rate": 3.8
   },
   "KS": {
     "openings_rate": 3.8,
-    "swdev_wage": null,
+    "swdev_wage": 112900,
     "unemployment_rate": 3.8
   },
   "KY": {
     "openings_rate": 4.7,
-    "swdev_wage": null,
+    "swdev_wage": 114200,
     "unemployment_rate": 4.7
   },
   "LA": {
     "openings_rate": 4.4,
-    "swdev_wage": null,
+    "swdev_wage": 119790,
     "unemployment_rate": 4.4
   },
   "ME": {
     "openings_rate": 3.2,
-    "swdev_wage": null,
+    "swdev_wage": 118110,
     "unemployment_rate": 3.2
   },
   "MD": {
     "openings_rate": 3.6,
-    "swdev_wage": null,
+    "swdev_wage": 150800,
     "unemployment_rate": 3.6
   },
   "MA": {
     "openings_rate": 4.8,
-    "swdev_wage": null,
+    "swdev_wage": 153650,
     "unemployment_rate": 4.8
   },
   "MI": {
     "openings_rate": 5.2,
-    "swdev_wage": null,
+    "swdev_wage": 114890,
     "unemployment_rate": 5.2
   },
   "MN": {
     "openings_rate": 3.6,
-    "swdev_wage": null,
+    "swdev_wage": 121600,
     "unemployment_rate": 3.6
   },
   "MS": {
     "openings_rate": 3.9,
-    "swdev_wage": null,
+    "swdev_wage": 87990,
     "unemployment_rate": 3.9
   },
   "MO": {
     "openings_rate": 4.1,
-    "swdev_wage": null,
+    "swdev_wage": 114240,
     "unemployment_rate": 4.1
   },
   "MT": {
     "openings_rate": 2.9,
-    "swdev_wage": null,
+    "swdev_wage": 120950,
     "unemployment_rate": 2.9
   },
   "NE": {
     "openings_rate": 3,
-    "swdev_wage": null,
+    "swdev_wage": 116110,
     "unemployment_rate": 3
   },
   "NV": {
     "openings_rate": 5.3,
-    "swdev_wage": null,
+    "swdev_wage": 137920,
     "unemployment_rate": 5.3
   },
   "NH": {
     "openings_rate": 3,
-    "swdev_wage": null,
+    "swdev_wage": 139860,
     "unemployment_rate": 3
   },
   "NJ": {
     "openings_rate": 5,
-    "swdev_wage": null,
+    "swdev_wage": 140520,
     "unemployment_rate": 5
   },
   "NM": {
     "openings_rate": 4.1,
-    "swdev_wage": null,
+    "swdev_wage": 120080,
     "unemployment_rate": 4.1
   },
   "NY": {
     "openings_rate": 4,
-    "swdev_wage": null,
+    "swdev_wage": 159990,
     "unemployment_rate": 4
   },
   "NC": {
     "openings_rate": 3.7,
-    "swdev_wage": null,
+    "swdev_wage": 131780,
     "unemployment_rate": 3.7
   },
   "ND": {
     "openings_rate": 2.5,
-    "swdev_wage": null,
+    "swdev_wage": 103610,
     "unemployment_rate": 2.5
   },
   "OH": {
     "openings_rate": 5,
-    "swdev_wage": null,
+    "swdev_wage": 116330,
     "unemployment_rate": 5
   },
   "OK": {
     "openings_rate": 3.1,
-    "swdev_wage": null,
+    "swdev_wage": 112920,
     "unemployment_rate": 3.1
   },
   "OR": {
     "openings_rate": 5,
-    "swdev_wage": null,
+    "swdev_wage": 146650,
     "unemployment_rate": 5
   },
   "PA": {
     "openings_rate": 4,
-    "swdev_wage": null,
+    "swdev_wage": 122240,
     "unemployment_rate": 4
   },
   "RI": {
     "openings_rate": 4.6,
-    "swdev_wage": null,
+    "swdev_wage": 126810,
     "unemployment_rate": 4.6
   },
   "SC": {
     "openings_rate": 4.3,
-    "swdev_wage": null,
+    "swdev_wage": 119610,
     "unemployment_rate": 4.3
   },
   "SD": {
     "openings_rate": 1.9,
-    "swdev_wage": null,
+    "swdev_wage": 93390,
     "unemployment_rate": 1.9
   },
   "TN": {
     "openings_rate": 3.6,
-    "swdev_wage": null,
+    "swdev_wage": 117940,
     "unemployment_rate": 3.6
   },
   "TX": {
     "openings_rate": 4.1,
-    "swdev_wage": null,
+    "swdev_wage": 133280,
     "unemployment_rate": 4.1
   },
   "UT": {
     "openings_rate": 3.3,
-    "swdev_wage": null,
+    "swdev_wage": 126650,
     "unemployment_rate": 3.3
   },
   "VT": {
     "openings_rate": 2.5,
-    "swdev_wage": null,
+    "swdev_wage": 134320,
     "unemployment_rate": 2.5
   },
   "VA": {
     "openings_rate": 3.6,
-    "swdev_wage": null,
+    "swdev_wage": 142230,
     "unemployment_rate": 3.6
   },
   "WA": {
     "openings_rate": 4.5,
-    "swdev_wage": null,
+    "swdev_wage": 175600,
     "unemployment_rate": 4.5
   },
   "WV": {
     "openings_rate": 3.8,
-    "swdev_wage": null,
+    "swdev_wage": 107330,
     "unemployment_rate": 3.8
   },
   "WI": {
     "openings_rate": 3.1,
-    "swdev_wage": null,
+    "swdev_wage": 114030,
     "unemployment_rate": 3.1
   },
   "WY": {
     "openings_rate": 3.2,
-    "swdev_wage": null,
+    "swdev_wage": 121500,
     "unemployment_rate": 3.2
   },
   "DC": {
     "openings_rate": 6,
-    "swdev_wage": null,
+    "swdev_wage": 143810,
     "unemployment_rate": 6
   }
 }
