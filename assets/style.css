@@ -18,19 +18,20 @@ body {
   overflow: auto; z-index: 500;
 }
 
-/* Map fills space left of the panel */
+/* Map fills space left of the panel (desktop) */
 #map {
   position: absolute; top: 0; left: 0; bottom: 0; right: 360px;
-  min-height: 520px; background: #0b1020; /* clean backdrop (no tiles) */
+  min-height: 520px;
+  background: #0b1020; /* clean backdrop (no tiles) */
 }
 
-/* On-map info box (replaces legend) */
+/* On-map info box */
 .info-box {
   position: absolute; left: 12px; bottom: 12px; z-index: 600;
   border: 1px solid #2b3262; border-radius: 10px;
   box-shadow: 0 6px 18px rgba(0,0,0,.3);
-  background: rgba(15,21,48,0.6); /* fallback if blur unsupported */
-  -webkit-backdrop-filter: blur(4px); /* Safari/iOS support */
+  background: rgba(15,21,48,0.6);
+  -webkit-backdrop-filter: blur(4px);
   backdrop-filter: blur(4px);
   color: #e9ecff;
   max-width: 320px;
@@ -57,7 +58,7 @@ body {
   padding: 10px 12px; min-width: 210px; font-size: 0.95rem;
 }
 
-/* Stats + chart cards */
+/* Cards */
 .stats-card, .chart-card {
   border: 1px solid #2b3262; border-radius: 12px; background:#0e1330;
   box-shadow: 0 6px 20px rgba(0,0,0,.25);
@@ -84,7 +85,7 @@ body {
 
 /* ---------- Responsive tweaks (desktop unchanged) ---------- */
 
-/* Tablet & small laptop tune-up */
+/* Tablet & small laptop */
 @media (max-width: 1024px) {
   #panel { width: 340px; }
   #map { right: 340px; }
@@ -97,13 +98,14 @@ body {
     width: auto;
     border-left: none;
     border-top: 1px solid #20285a;
-    padding: 14px 14px 90px; /* room for bottom credit */
+    padding: 14px 14px 90px;
   }
+  /* Map occupies more vertical space and can pan */
   #map {
     position: relative;
     right: 0;
-    height: 62vh;
-    min-height: 360px;
+    height: 70vh;             /* taller so the whole US fits */
+    min-height: 380px;
   }
   .info-box {
     left: 50%;
@@ -111,13 +113,21 @@ body {
     bottom: 12px;
     max-width: min(92vw, 480px);
   }
+  /* Comfortable tap targets */
   .panel-header { padding-top: 6px; }
   #metricSelect {
     min-width: 100%;
     font-size: 1rem;
     padding: 12px 14px;
   }
+  /* Ensure cards do NOT crowd or overlap */
+  #panel > .stats-card,
+  #panel > .chart-card { margin-top: 14px; }
   .stats-card, .chart-card { border-radius: 10px; }
-  .chart-card { min-height: 280px; }
+  .chart-card { min-height: 300px; }
+  /* The long tech stack line can be chatty on phones; hide if you want */
+  /* .info-box__meta { display:none; } */
+
+  /* Credit flows below content so it never sits on top of the chart */
   .credit { position: static; text-align: right; margin-top: 10px; }
 }

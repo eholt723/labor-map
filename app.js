@@ -40,26 +40,25 @@ const LOWER48_ABBRS = new Set([
 
 /* ---- STATE ---- */
 let map, geoLayer;
-let currentMetric = "unemployment_rate"; // default dropdown
+let currentMetric = "unemployment_rate";
 let selectionHistory = []; // [most recent, ...] capped at 3
+const isMobile = window.matchMedia("(max-width: 980px)").matches;
 
 document.addEventListener("DOMContentLoaded", boot);
 
 async function boot() {
-  // Fixed, non-interactive map
+  // Map options: desktop locked; mobile can pan
   map = L.map("map", {
     attributionControl: false,
     zoomControl: false,
-    dragging: false,
+    dragging: isMobile,          // enable pan on phones
     scrollWheelZoom: false,
     doubleClickZoom: false,
     boxZoom: false,
     keyboard: false,
-    tap: false
+    tap: isMobile,               // allow touch panning
+    zoomSnap: isMobile ? 0.5 : 1 // smoother zoom if we ever enable it
   });
-  map.setView([38, -96], 5);
-  map.setMinZoom(5);
-  map.setMaxZoom(5);
 
   // Load metrics (prefer /data, fallback /docs/data for GH Pages)
   let metricsByAbbr = {};
@@ -87,7 +86,7 @@ async function boot() {
     } catch {}
   }
 
-  // Show "Updated:" in the info box (prefer embedded timestamp if present)
+  // Show "Updated:" in the info box
   const embedded = metricsByAbbr?.__meta?.as_of || metricsByAbbr?.as_of || null;
   const infoEl = document.getElementById("infoUpdated");
   if (infoEl) infoEl.textContent = embedded ? `Updated: ${formatAsOf(embedded)}`
@@ -110,11 +109,25 @@ async function boot() {
     features: allStates.features.filter(f => LOWER48_ABBRS.has(f.properties.abbr))
   };
 
+  // View/zoom behavior: desktop locked at z=5; mobile fits all states
+  if (isMobile) {
+    const tmp = L.geoJSON(statesGeo);
+    const bounds = tmp.getBounds();
+    tmp.remove();
+    map.fitBounds(bounds, { padding: [12, 12] });
+    map.setMinZoom(map.getZoom() - 0.5);
+    map.setMaxZoom(map.getZoom() + 2);
+  } else {
+    map.setView([38, -96], 5);
+    map.setMinZoom(5);
+    map.setMaxZoom(5);
+  }
+
   drawStates(statesGeo, currentMetric);
   updateSidebar(statesGeo, currentMetric);
   setupControls(statesGeo);
 
-  // Ensure Leaflet recalculates size after layout paints and on resize
+  // Recompute size after paint and on rotation/resizes
   setTimeout(() => map.invalidateSize(), 0);
   window.addEventListener("resize", () => map.invalidateSize());
 }
@@ -203,15 +216,15 @@ function renderChart(rows, avg, metricKey) {
         legend: { display: true, labels: { color: "#e9ecff", boxWidth: 18 } },
         tooltip: {
           backgroundColor: "#0f1530", titleColor: "#e9ecff", bodyColor: "#e9ecff",
-          callbacks: {
-            label: ctx => `${ctx.dataset.label}: ${formatValue(metricKey, ctx.raw)}`
-          }
+          callbacks: { label: c => `${c.dataset.label}: ${formatValue(metricKey, c.raw)}` }
         }
       },
       scales: {
         x: { grid: { display: false }, ticks: { color: "#cdd2ff" } },
-        y: { grid: { color: "rgba(255,255,255,0.08)" }, ticks: { color: "#cdd2ff",
-             callback: v => formatValue(metricKey, v) } }
+        y: {
+          grid: { color: "rgba(255,255,255,0.08)" },
+          ticks: { color: "#cdd2ff", callback: v => formatValue(metricKey, v) }
+        }
       }
     }
   });
